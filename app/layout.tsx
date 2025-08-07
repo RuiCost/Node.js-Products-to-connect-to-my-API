@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientProvider from "./ClientProvider" // client wrapper you will create below
 
-import TopBar from "@/components/TopBar"; // ✅ Add this
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -31,9 +29,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClientProvider>
-          <TopBar /> {/* ✅ Add the top bar */} 
           {children}
-          </ClientProvider>
+        </ClientProvider>
       </body>
     </html>
   );

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 type Category = {
   idCategory: number;
@@ -16,11 +17,6 @@ type Category = {
 export default function AddProductPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/api/auth/signin");
-    }
-  }, [status, router]);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState({
@@ -30,6 +26,7 @@ export default function AddProductPage() {
     description: "",
     categoryId: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -37,7 +34,7 @@ export default function AddProductPage() {
 
     const fetchCategories = async () => {
       try {
-        const res = await fetch("/api/categories"); // You'll need to proxy this like products
+        const res = await fetch("/api/categories");
         const data = await res.json();
         setCategories(data);
       } catch (err: any) {
@@ -54,8 +51,10 @@ export default function AddProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
     try {
+      // 1. Criar o produto
       const res = await fetch("/api/products", {
         method: "POST",
         headers: {
@@ -72,11 +71,29 @@ export default function AddProductPage() {
 
       if (!res.ok) throw new Error("Failed to add product");
 
+      const product = await res.json();
+
+      // 2. Fazer upload da imagem
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+
+        const uploadRes = await fetch(`/api/products/${product.id}/upload-image`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Product created but image upload failed");
+        }
+      }
+
       router.push("/");
     } catch (err: any) {
       setError(err.message);
     }
   };
+
   if (status === "unauthenticated") return <p className="p-4">Sign in to add a product.</p>;
 
   return (
@@ -118,6 +135,32 @@ export default function AddProductPage() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* IMAGE INPUT */}
+        <div>
+          <Label htmlFor="image">Product Image</Label>
+          <div
+            className={cn(
+              "border border-dashed border-gray-300 p-4 rounded-md text-center cursor-pointer",
+              imageFile && "border-green-500"
+            )}
+          >
+            <Input
+              id="image"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  setImageFile(e.target.files[0]);
+                }
+              }}
+            />
+            <label htmlFor="image" className="cursor-pointer">
+              {imageFile ? imageFile.name : "Click or drag to select an image"}
+            </label>
+          </div>
         </div>
 
         {error && <p className="text-red-500 text-sm">{error}</p>}

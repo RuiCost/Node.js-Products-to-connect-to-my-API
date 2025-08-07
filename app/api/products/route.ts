@@ -12,9 +12,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const url = new URL(API_BASE_URL);
-  url.searchParams.set("page", "0");
-  url.searchParams.set("size", "8");
+  const { searchParams } = new URL(req.url); // Get query params from request
+  const query = searchParams.get("query") || "";
+  const category = searchParams.get("category") || "";
+  const page = searchParams.get("page") || "0";
+  const size = searchParams.get("size") || "8";
+
+  const url = new URL(`${API_BASE_URL}/search`);
+  if (query) url.searchParams.set("query", query);
+  if (category) url.searchParams.set("category", category);
+  url.searchParams.set("page", page);
+  url.searchParams.set("size", size);
 
   const res = await fetch(url.toString(), {
     headers: {
@@ -25,6 +33,7 @@ export async function GET(req: NextRequest) {
   const data = await res.json();
   return NextResponse.json(data, { status: res.status });
 }
+
 
 export async function POST(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.JWT_SECRET });

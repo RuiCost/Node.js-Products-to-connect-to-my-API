@@ -21,8 +21,8 @@ export default function TopBar() {
       <NavigationMenu>
         <NavigationMenuList className="space-x-4">
           <NavigationMenuItem>
-            <Link href="/" className="text-sm font-medium hover:underline">
-              Projects
+            <Link href="/products" className="text-sm font-medium hover:underline">
+              Products
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
