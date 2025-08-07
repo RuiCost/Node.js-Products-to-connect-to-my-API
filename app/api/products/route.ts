@@ -42,27 +42,54 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  console.log("Authorized?");
-  const body = await req.json();
+  // Parse multipart/form-data
+  const formData = await req.formData();
 
-  console.log("Data" + JSON.stringify(body))
+  // Extract fields
+  const name = formData.get("name") as string;
+  const price = parseFloat(formData.get("price") as string);
+  const quantity = parseInt(formData.get("quantity") as string);
+  const description = formData.get("description") as string;
+  const category = parseInt(formData.get("category") as string);
+  const image = formData.get("file") as File | null;
 
-  const res = await fetch(API_BASE_URL, {
+  // Step 1: Create product
+  const createRes = await fetch(API_BASE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token.accessToken}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ name, price, quantity, description, category }),
   });
 
-  const text = await res.text();
+  const text = await createRes.text();
+  const createdProduct = text ? JSON.parse(text) : {};
 
-  console.log(text)
+  if (!createRes.ok) {
+    return NextResponse.json({ message: "Product creation failed", error: createdProduct }, { status: createRes.status });
+  }
 
-    const data = text ? JSON.parse(text) : {}; // fallback to empty object
+  const productId = createdProduct.id;
 
-    console.log(data)
+  // Step 2: Upload image (if present)
+  if (image && image instanceof File) {
+    const uploadForm = new FormData();
+    uploadForm.append("file", image);
 
-    return NextResponse.json(data, { status: res.status });
+    const uploadRes = await fetch(`http://localhost:8080/api/product/photo/${productId}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.accessToken}`,
+        // Do not set Content-Type here, let fetch handle it
+      },
+      body: uploadForm,
+    });
+
+    if (!uploadRes.ok) {
+      return NextResponse.json({ message: "Product created but image upload failed" }, { status: 500 });
+    }
+  }
+
+  return NextResponse.json(createdProduct, { status: 201 });
 }

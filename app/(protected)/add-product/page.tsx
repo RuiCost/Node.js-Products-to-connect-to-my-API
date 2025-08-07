@@ -8,6 +8,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Dropzone, DropzoneContent, DropzoneEmptyState } from '@/components/ui/shadcn-io/dropzone';
 
 type Category = {
   idCategory: number;
@@ -26,8 +27,13 @@ export default function AddProductPage() {
     description: "",
     categoryId: "",
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[] | undefined>();
   const [error, setError] = useState("");
+
+  const handleDrop = (files: File[]) => {
+    console.log(files);
+    setFiles(files);
+  };
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -53,43 +59,25 @@ const handleSubmit = async (e: React.FormEvent) => {
   setError("");
 
   try {
-    // 1. Criar o produto
+    const formData = new FormData();
+    formData.append("name", form.name);
+    formData.append("price", form.price);
+    formData.append("quantity", form.quantity);
+    formData.append("description", form.description);
+    formData.append("category", form.categoryId);
+    
+    if (files) {
+      formData.append("file", files[0]); // This will be read on the server
+    }
+
     const res = await fetch("/api/products", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: form.name,
-        price: parseFloat(form.price),
-        quantity: parseInt(form.quantity),
-        description: form.description,
-        category: parseInt(form.categoryId),
-      }),
+      body: formData, // No headers needed — fetch will set the correct multipart boundaries
     });
 
     if (!res.ok) throw new Error("Failed to add product");
 
     const product = await res.json();
-
-    // 2. Fazer upload da imagem, com token
-    if (imageFile && session?.accessToken) {
-      const formData = new FormData();
-      formData.append("file", imageFile);
-
-      const uploadRes = await fetch(`http://localhost:8080/api/product/photo/${product.id}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error("Product created but image upload failed");
-      }
-    }
-
     router.push("/");
   } catch (err: any) {
     setError(err.message);
@@ -143,27 +131,18 @@ const handleSubmit = async (e: React.FormEvent) => {
         {/* IMAGE INPUT */}
         <div>
           <Label htmlFor="image">Product Image</Label>
-          <div
-            className={cn(
-              "border border-dashed border-gray-300 p-4 rounded-md text-center cursor-pointer",
-              imageFile && "border-green-500"
-            )}
+          <Dropzone
+            accept={{ 'image/*': [] }}
+            maxFiles={10}
+            maxSize={1024 * 1024 * 10}
+            minSize={1024}
+            onDrop={handleDrop}
+            onError={console.error}
+            src={files}
           >
-            <Input
-              id="image"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  setImageFile(e.target.files[0]);
-                }
-              }}
-            />
-            <label htmlFor="image" className="cursor-pointer">
-              {imageFile ? imageFile.name : "Click or drag to select an image"}
-            </label>
-          </div>
+            <DropzoneEmptyState />
+            <DropzoneContent />
+          </Dropzone>
         </div>
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
