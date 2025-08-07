@@ -48,51 +48,54 @@ export default function AddProductPage() {
   const handleChange = (key: string, value: string) => {
     setForm({ ...form, [key]: value });
   };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  try {
+    // 1. Criar o produto
+    const res = await fetch("/api/products", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: form.name,
+        price: parseFloat(form.price),
+        quantity: parseInt(form.quantity),
+        description: form.description,
+        category: parseInt(form.categoryId),
+      }),
+    });
 
-    try {
-      // 1. Criar o produto
-      const res = await fetch("/api/products", {
+    if (!res.ok) throw new Error("Failed to add product");
+
+    const product = await res.json();
+
+    // 2. Fazer upload da imagem, com token
+    if (imageFile && session?.accessToken) {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+
+      const uploadRes = await fetch(`http://localhost:8080/api/product/photo/${product.id}`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({
-          name: form.name,
-          price: parseFloat(form.price),
-          quantity: parseInt(form.quantity),
-          description: form.description,
-          category: parseInt(form.categoryId),
-        }),
+        body: formData,
       });
 
-      if (!res.ok) throw new Error("Failed to add product");
-
-      const product = await res.json();
-
-      // 2. Fazer upload da imagem
-      if (imageFile) {
-        const formData = new FormData();
-        formData.append("file", imageFile);
-
-        const uploadRes = await fetch(`/api/products/${product.id}/upload-image`, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error("Product created but image upload failed");
-        }
+      if (!uploadRes.ok) {
+        throw new Error("Product created but image upload failed");
       }
-
-      router.push("/");
-    } catch (err: any) {
-      setError(err.message);
     }
-  };
+
+    router.push("/");
+  } catch (err: any) {
+    setError(err.message);
+  }
+};
+
 
   if (status === "unauthenticated") return <p className="p-4">Sign in to add a product.</p>;
 
