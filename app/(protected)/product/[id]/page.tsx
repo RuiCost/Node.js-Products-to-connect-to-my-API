@@ -64,36 +64,45 @@ export default function ProductPage() {
     }
   }, [id, status]);
 
-  const handleBuy = async () => {
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    try {
-      const res = await fetch("/api/shoppingCart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idProduct: product!.id, quantity }),
-      });
-      if (!res.ok) {
+const handleBuy = async () => {
+  setLoading(true);
+  setError("");
+  setSuccess("");
+  try {
+    const res = await fetch("/api/shoppingCart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idProduct: product!.id, quantity }),
+    });
+    if (!res.ok) {
+      let msg = "";
+      try {
         const data = await res.json();
-        throw new Error(data.message || "Erro ao adicionar ao carrinho");
+        if (data.details && Array.isArray(data.details)) {
+          msg = data.details.join(", ");
+        } else {
+          msg = data.message || "Erro ao adicionar ao carrinho";
+        }
+      } catch {
+        const text = await res.text();
+        if (text) msg = text;
       }
-      setSuccess("Produto adicionado ao carrinho!");
-      // Opcional: router.push("/shoppingCart");
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      throw new Error(msg);
     }
-  };
+    setSuccess("Produto adicionado ao carrinho!");
+    // Opcional: router.push("/shoppingCart");
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+// ...existing code...
   if (status === "loading") return <p className="p-4">Loading session...</p>;
-  if (error) return <p className="p-4 text-red-500">Error: {error}</p>;
   if (!product) return <p className="p-4">Loading product...</p>;
 
-// ...existing code...
   return (
     <main className="p-6 flex items-center justify-center min-h-[80vh]">
-      {/* Shadcn Breadcrumbs */}
       <div className="w-full max-w-4xl">
         <Breadcrumb>
           <BreadcrumbList>
@@ -144,6 +153,7 @@ export default function ProductPage() {
                 {loading ? "A adicionar..." : "Comprar"}
               </Button>
             </div>
+            {/* Mostra mensagem de erro do servidor aqui */}
             {success && <p className="text-green-600">{success}</p>}
             {error && <p className="text-red-500">{error}</p>}
           </div>
@@ -152,3 +162,4 @@ export default function ProductPage() {
     </main>
   );
 }
+// ...existing code...

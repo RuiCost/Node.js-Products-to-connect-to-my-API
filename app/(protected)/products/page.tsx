@@ -134,9 +134,17 @@ export default function ProjectsPage() {
                   <Badge variant="secondary">{product.category.name}</Badge>
                 </CardTitle>
               </CardHeader>
-              <div className="w-full h-48 bg-black mb-4 flex items-center justify-center">
+              <div className="w-full h-48 bg-black mb-4 flex items-center justify-center relative">
                 <ProductImage url={product.imageURL} alt={product.name} />
+                {product.quantity === 0 && (
+                  <span className="absolute top-2 left-2 bg-red-600 text-white px-3 py-1 rounded font-bold text-xs shadow-lg z-10">
+                    Sold Out
+                  </span>
+                )}
               </div>
+
+              
+              
               <CardContent className="space-y-2">
                 <p className="text-sm text-muted-foreground">{product.description}</p>
                 <div className="text-sm">

@@ -64,6 +64,9 @@ export default function TopBar() {
             <DropdownMenuItem onClick={() => router.push("/shoppingCart")}>
               Shopping Cart
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/invoices")}>
+              Invoices
+            </DropdownMenuItem>
 
             <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
               Logout
@@ -96,6 +99,9 @@ export default function TopBar() {
             </Link>
             <Link href="/shoppingCart" className="text-sm font-medium">
               Shopping Cart
+            </Link>
+            <Link href="/invoices" className="text-sm font-medium">
+              Invoices
             </Link>
           </nav>
           <div className="border-t pt-4 flex items-center gap-3">

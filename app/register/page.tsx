@@ -70,7 +70,7 @@ export default function RegisterPage() {
                 />
             </div>
             <div>
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Email</Label>
               <Input
                 id="username"
                 type="text"

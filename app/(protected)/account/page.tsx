@@ -45,7 +45,7 @@ export default function AccountPage() {
       <h1 className="text-2xl font-bold mb-4">My Account</h1>
       <div className="space-y-2">
         <p><strong>Full Name:</strong> {user?.fullName}</p>
-        <p><strong>Username:</strong> {user?.username}</p>
+        <p><strong>Email:</strong> {user?.username}</p>
       </div>
     </div>
   );
