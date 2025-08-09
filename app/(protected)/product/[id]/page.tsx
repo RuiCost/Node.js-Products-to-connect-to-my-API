@@ -15,6 +15,7 @@ type Product = {
     idCategory: number;
     name: string;
   };
+  imageURL: string;
 };
 
 import {
@@ -27,63 +28,126 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
+// ...existing code...
+import ProductImage from "@/components/ProductImage"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+// ...existing code...
+
 export default function ProductPage() {
   const { id } = useParams();
-  const { status } = useSession(); // still used to guard access
+  const { status } = useSession();
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const res = await fetch(`/api/product/${id}`);
-
         if (!res.ok) {
           const text = await res.text();
           throw new Error(text || "Failed to fetch product");
         }
-
         const data = await res.json();
         setProduct(data);
       } catch (err: any) {
         setError(err.message);
       }
     };
-
     if (id && status === "authenticated") {
       fetchProduct();
     }
   }, [id, status]);
 
+  const handleBuy = async () => {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch("/api/shoppingCart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idProduct: product!.id, quantity }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Erro ao adicionar ao carrinho");
+      }
+      setSuccess("Produto adicionado ao carrinho!");
+      // Opcional: router.push("/shoppingCart");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   if (status === "loading") return <p className="p-4">Loading session...</p>;
   if (error) return <p className="p-4 text-red-500">Error: {error}</p>;
   if (!product) return <p className="p-4">Loading product...</p>;
 
+// ...existing code...
   return (
-    <main className="p-6">
+    <main className="p-6 flex items-center justify-center min-h-[80vh]">
       {/* Shadcn Breadcrumbs */}
-      <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/products">Products</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>{product.name}</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
+      <div className="w-full max-w-4xl">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/products">Products</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{product.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-      <h1 className="text-2xl font-bold">{product.name}</h1>
-      <p className="mb-2 text-muted-foreground">{product.description}</p>
-
-      <div className="space-y-2 text-sm">
-        <p><strong>ID:</strong> {product.id}</p>
-        <p><strong>Price:</strong> ${product.price}</p>
-        <p><strong>Stock:</strong> {product.quantity}</p>
-        <p><strong>Category:</strong> {product.category.name}</p>
+        <div className="flex flex-col md:flex-row gap-8 mt-8 items-center justify-center">
+          <div className="w-full md:w-[420px] flex items-center justify-center bg-black h-80 rounded-lg border mb-6 md:mb-0">
+            <ProductImage url={product.imageURL} alt={product.name} className="object-contain max-h-72" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">{product.name}</h1>
+            <p className="mb-2 text-muted-foreground">{product.description}</p>
+            <div className="space-y-2 text-sm mb-4">
+              <p><strong>ID:</strong> {product.id}</p>
+              <p><strong>Price:</strong> ${product.price}</p>
+              <p><strong>Stock:</strong> {product.quantity}</p>
+              <p><strong>Category:</strong> {product.category.name}</p>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <Input
+                type="number"
+                min={1}
+                max={product.quantity}
+                value={quantity === 0 ? "" : quantity}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    setQuantity(0);
+                  } else {
+                    const num = Number(val);
+                    setQuantity(num);
+                  }
+                }}
+                className="w-24"
+                aria-label="Quantidade"
+              />
+              <Button onClick={handleBuy} disabled={loading || quantity < 1 || quantity > product.quantity}>
+                {loading ? "A adicionar..." : "Comprar"}
+              </Button>
+            </div>
+            {success && <p className="text-green-600">{success}</p>}
+            {error && <p className="text-red-500">{error}</p>}
+          </div>
+        </div>
       </div>
     </main>
   );

@@ -93,29 +93,34 @@ export default function ProjectsPage() {
         <h1 className="text-3xl font-bold">Products</h1>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-2 items-center">
-          <Input
-            placeholder="Search..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-40"
-          />
-          <Select value={category} onValueChange={(value) => setCategory(value === "all" ? "" : value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {/* Dynamically render categories */}
-              <SelectItem value="all">All</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.idCategory} value={cat.name}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button type="submit">Search</Button>
-        </form>
+        <form
+  onSubmit={handleSearch}
+  className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end"
+>
+  <Input
+    placeholder="Search..."
+    value={query}
+    onChange={(e) => setQuery(e.target.value)}
+    className="w-full sm:w-40"
+  />
+  <Select value={category} onValueChange={(value) => setCategory(value === "all" ? "" : value)}>
+    <SelectTrigger className="w-full sm:w-32">
+      <SelectValue placeholder="Category" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All</SelectItem>
+      {categories.map((cat) => (
+        <SelectItem key={cat.idCategory} value={cat.name}>
+          {cat.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+  <Button type="submit" className="w-full sm:w-auto">
+    Search
+  </Button>
+</form>
+
       </div>
 
       {/* Product Grid */}
